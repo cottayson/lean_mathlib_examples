@@ -1,0 +1,28 @@
+{
+  "BeginEnd": {
+    "prefix": ["beg"],
+    // "body": ["for (const ${2:element} of ${1:array}) {", "\t$0", "}"],
+    "body": ["begin","\t$0","end"],
+    "description": "begin .. end"
+  },
+  "Namespace": {
+    "prefix": ["ns"],
+    "body": ["namespace $1","","$0","","end $1"],
+    "description": "namespace .. end"
+  },
+  "Lemma": {
+    "prefix": ["lem"],
+    "body": ["lemma ${3:name} ${2:types} : ${1:proposition} :=", "begin", "\t$0", "end"],
+    "description": "lemma snippet"
+  },
+  "Example": {
+    "prefix": ["exam"],
+    "body": ["example ${2:}: ${1:proposition} :=", "begin", "\t$0","end"],
+    "description": "example statement snippet"
+  },
+  "Axiom": {
+    "prefix": ["axi"],
+    "body": ["axiom ${3:name} ${2:types} : ${1:proposition}"],
+    "description": "axiom snippet"
+  },
+}
