@@ -55,7 +55,7 @@ local notation `b9` := B 9
 namespace braid
 
 -- axiom b_zero : B 0 = e
--- Group aksioms:
+-- Group axioms:
 axiom assoc : a * b * c = a * (b * c)
 -- axiom id.left : e * a = a
 axiom id.right : a * e = a
@@ -115,20 +115,26 @@ lemma inv_inv : a⁻¹⁻¹ = a := by {
   b⁻¹ * a⁻¹ = x   : from mul_left b⁻¹
 -/
 lemma inv_two : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by {
-  calc (a * b)⁻¹ = (a * b)⁻¹ * e : from id.right
-             ... = (a * b)⁻¹ * (b * b⁻¹) : from sorry,
+  have h : a * b * b⁻¹ * a⁻¹ = e :=
+    by rw [@assoc a b b⁻¹, inv, id.right, inv],
+  calc (a * b)⁻¹ = (a * b)⁻¹ * e                    : (@id.right (a * b)⁻¹).symm
+             ... = (a * b)⁻¹ * (a * b * b⁻¹ * a⁻¹)  : by rw h
+             ... = (a * b)⁻¹ * (a * b) * b⁻¹ * a⁻¹  : by
+               conv { to_rhs, rw [@assoc _ _ b⁻¹, @assoc _ _ a⁻¹] }
+             ... = e * b⁻¹ * a⁻¹  : by rw inv_left
+             ... = b⁻¹ * a⁻¹  : by { rw assoc, exact id.left },
+  -- use this patern for building calc step by step:
+  --         ... = _ : _
 }
 
--- Braid aksioms:
+-- Braid axioms:
 axiom dist_comm : i.succ < j → B i * B j = B j * B i
-axiom dist_comm' (h : i.succ < j) : B i * B j = B j * B i
+-- axiom dist_comm' (h : i.succ < j) : B i * B j = B j * B i
 axiom artin : B i * B i.succ * B i = B i.succ * B i * B i.succ
 
 open nat
 -- Braid lemmas:
 lemma triv : (B i) * (B i)⁻¹ = e := inv
-
-
 
 lemma inv_left₂ : a⁻¹ * a = e := by {
     -- rw ←@inv a, -- ⊢ a⁻¹ * a = a * a⁻¹
@@ -283,11 +289,6 @@ example : 0 < 2 := lt.trans (lt.base 0) (lt.base 1)
 example : 0 < 2 := @lt.step 0 1 (lt.base 0)
 
 example (a : Prop) : (a → true) ↔ true := iff.intro (λ _, trivial) (λ _ _, trivial)
-
--- axiom b_zero : b 0 = e
--- axiom trivial (i : ℤ) (x : β) : b (-i) (b i x) = e x
--- axiom dist_comm (i j : ℤ) (x : β) :
---   abs (i - j) >= 2 → b i (b j x) = b j (b i x)
 
 end braid
 
