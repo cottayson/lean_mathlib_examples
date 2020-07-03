@@ -16,6 +16,9 @@ Proof.
 -/
 
 import data.nat.prime
+import tactic.find
+
+namespace hidden
 
 open nat
 
@@ -31,3 +34,15 @@ theorem exists_infinite_primes : ∀ n : ℕ, ∃ p, p ≥ n ∧ prime p :=
     have h₂ : p ∣ 1, from (nat.dvd_add_iff_right h₁).2 (min_fac_dvd (fact n + 1)),
     pp.not_dvd_one h₂,
   ⟨p, w, pp⟩
+
+end hidden
+
+-- #find needs "import data.nat.prime" line
+-- OR
+-- #find needs "import tactic.find" line
+-- #find (_ : nat) + _ = _ + _ -- waiting time ~= 20 seconds
+-- nat.add_assoc: ∀ (n m k : ℕ), n + m + k = n + (m + k)
+-- nat.add_left_comm: ∀ (n m k : ℕ), n + (m + k) = m + (n + k)
+-- nat.add_comm: ∀ (n m : ℕ), n + m = m + n
+-- nat.succ_add_eq_succ_add: ∀ (n m : ℕ), n.succ + m = n + m.succ
+-- nat.add_right_comm: ∀ (n m k : ℕ), n + m + k = n + k + m

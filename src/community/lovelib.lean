@@ -1,0 +1,1 @@
+-- https://github.com/blanchette/logical_verification_2020/tree/4e48283bab022bc3d19d23fd86fbef2799e70ba6/lean

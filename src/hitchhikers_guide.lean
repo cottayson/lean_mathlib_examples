@@ -82,27 +82,45 @@ constants P Q : Type
 -- lemma p_q_not (p : P)(q : Q) : p = q → p ∧ ¬ q → false := sorry
 
 
-lemma example_forward_proof (p : P) : p = p :=
+lemma example_forward_proof (p : Prop) : p = p :=
 begin
   -- simp, -- [simplify.rewrite] [eq_self_iff_true]: p = p ==> true
   -- refl,
   -- apply eq_self_iff_true p,
-  have h := eq_self_iff_true p,
-  have h2 := propext h,
-  have h3 := h2.mpr,
-  apply h3, -- some backward proof
-  trivial,
+
+  have h1 := eq_self_iff_true p, -- we don't need this, only for example
+  have h2 := h1.to_eq, -- also works: propext h1
+  have h3 := h1.mpr,
+  have h4 := h3 true.intro,
+  exact h4,
 end
+
 #print example_forward_proof
--- λ (p : P), (id (propext (eq_self_iff_true p))).mpr trivial
+-- λ (p : Prop), (eq_self_iff_true p).mpr true.intro
+
+-- this can be proved by reflexivity
+lemma example_forward_proof₂ (p : Prop) : p = p := eq.refl _
+
+#print example_forward_proof₂ -- λ (p : Prop), eq.refl p
+
+lemma example_forward_proof₃ (p q : Prop) : p = q → (p ∧ q) = p :=
+begin
+  assume h1 : p = q,
+  have h2 : p ∧ p ↔ p := and_self p,
+  have h3 : (p ∧ p) = p := h2.to_eq, -- iff.to_eq
+  have h4 : (p ∧ p) = p → (p ∧ q) = p := 
+    assume (h: (p ∧ p) = p), eq.subst h1 h,
+  show (p ∧ q) = p, from h4 h3, -- ≈ exact h4 h3, but more readable
+end
 
 example (expr : Prop): (expr ∨ expr) → true :=
 begin
-  simp,
+  -- simp,
 -- 0. [simplify.rewrite] [or_self]: expr ∨ expr ==> expr
 -- 0. [simplify.rewrite] [forall_true_iff]: expr → true ==> true
-  -- rw or_self,
-  -- exact expr,
+  rw or_self,
+  rw forall_true_iff,
+  exact true.intro,
 end
 
 
@@ -132,9 +150,11 @@ begin
     exfalso,
     -- have t₁ := p_q_not second f2,
     -- have h₅ := p_q_not _ _,
-    have u := and.intro second f2,
-    simp [second] at u,
-    exact u,
+
+    -- have u := and.intro second f2,
+    -- simp [second] at u,
+    -- exact u,
+    exact absurd second f2,
   },
 end 
 
@@ -157,18 +177,19 @@ To prove a, we use a.
 
 -- Example of forward proof:
 lemma fst_of_two_props :
-  ∀ a b : Prop, a → b → a :=
+  ∀ a b : Prop, a → b → (a → b) :=
 begin -- ⊢ ∀ (a b : Prop), a → b → a
-  intros a b,
-  -- have h1 := ,
-  sorry,
+  introv,
+  intros ha hb,
+  have h := imp_intro hb, -- it's example very trivial
+  exact h,
 end
 
 -- Example of backward proof:
 lemma fst_of_two_props' :
   ∀ a b : Prop, a → b → a :=
 begin -- ⊢ ∀ (a b : Prop), a → b → a
-  intros a b, -- ⊢ a → b → a (Goal changed)
+  introv, -- ⊢ a → b → a (Goal changed)
   intros ha hb, -- ⊢ a (Goal changed)
   apply ha, -- goals accomplished (Goal changed)
 end
