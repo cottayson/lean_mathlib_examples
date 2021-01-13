@@ -22,6 +22,7 @@ by do
   back_chaining_core (trace "pre tac:" >> trace_state >> trace "-------") failed ctx
 
 set_option back_chaining.max_depth 10
+set_option trace.tactic.back_chaining true
 
 lemma L3 : ∀ T1 T2 T3 T4 T5 T6 (H1 :subtype T1 T2) (H2 : subtype T2 T3) (H3 : subtype T3 T4) (H3 : subtype T4 T5) (H4 : subtype T5 T6), subtype T1 T6 :=
 by (intros >> back_chaining_using_hs)

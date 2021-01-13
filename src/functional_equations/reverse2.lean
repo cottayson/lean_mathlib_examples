@@ -56,6 +56,6 @@ begin
     simp [ih],
     induction ys with z zs ih2,
     { simp },
-    
+    sorry,
   },
 end

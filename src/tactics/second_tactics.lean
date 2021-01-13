@@ -29,7 +29,7 @@ end hidden
 
 example : true := true.intro
 
-lemma test : 1 = 1 ∧ 2 = 2 :=
+lemma test : (1 : hidden.nat) = 1 ∧ 2 = 2 :=
 begin
   -- apply and.intro,
   -- exact eq.refl 1,

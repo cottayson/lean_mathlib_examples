@@ -35,10 +35,10 @@ def id3 {{α : Type u}} (x : α) : α := x
 #check (id3 : Π α : Type, α → α) -- OK
 
 class cls := (val : ℕ)
-instance cls_five : cls := ⟨5⟩
+instance cls.five : cls := ⟨5⟩
 
-#check cls_five -- cls_five : cls
-#reduce cls_five -- {val := 5}
+#check cls.five -- cls_five : cls
+#reduce cls.five -- {val := 5}
 
 def ex2 [c : cls] : ℕ := c.val
 #reduce ex2 -- 5

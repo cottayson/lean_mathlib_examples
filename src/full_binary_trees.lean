@@ -150,10 +150,7 @@ lemma is_full_singleton {α : Type} (a : α) :
 begin
   constructor,
   simp,
-  exact btree.empty,
-  exact btree.empty,
-  exact btree.empty,
-  exact btree.empty,
+  iterate 4 { exact btree.empty },
 end
 
 /-
@@ -190,6 +187,8 @@ inductive is_empty {α : Type} : btree α → Prop
 
 inductive is_not_empty {α : Type} : btree α → Prop
 | node (a : α) : is_not_empty (singleton a)
+
+lemma is_not_empty.def {α : Type} (t : btree α) : is_not_empty t ↔ ¬ is_empty t := sorry
 
 inductive is_full {α : Type} : btree α → Prop
 | empty : is_full btree.empty
@@ -236,7 +235,7 @@ begin
     { exact ih_r },
     { exact ih_l },
     {
-      simp [mirror_eq_empty_iff, *],
+      -- simp [mirror_eq_empty_iff],
       sorry,
     },
   },
@@ -280,20 +279,25 @@ lemma is_full_mirror₂ {α : Type} :
 
 example : ¬ is_empty (singleton a) :=
 begin
-  assume h : is_empty (singleton a),
-  cases (singleton a) with a left right,
-  tactic.swap,
-  -- rw is_empty.empty,
+  -- assume h : is_empty (singleton a),
+  -- type_check is_empty.empty,
+  -- cases (singleton a) with a left right,
+  -- induction a with a left right,
+  by_contra h₁,
+  have h₂ := @is_empty.empty α,
+  -- type_check @is_empty α,
+  -- prove with using axiom `is_not_empty.def`
   sorry,
 end
 
-lemma empty_is_empty: is_empty (@btree.empty α) :=
-begin
-  -- refl, -- fail
-  -- apply is_empty, -- fail
-  exact is_empty.empty, -- OK
-end
+lemma singleton_is_not_empty : ¬ is_empty (singleton a) := by {
+  rw ←is_not_empty.def,
+  exact is_not_empty.node a,
+}
 
+#print singleton_is_not_empty
+
+lemma empty_is_empty: is_empty (@btree.empty α) := is_empty.empty
 
 end from_book
 

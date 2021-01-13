@@ -38,6 +38,22 @@ constant inv : β → β
 noncomputable instance : has_mul β := ⟨mul⟩
 noncomputable instance : has_inv β := ⟨inv⟩
 
+noncomputable def pow : β → ℕ → β
+| a 0 := e
+| a (nat.succ n) := (pow a n) * a
+
+noncomputable def pow_right : β → ℕ → β
+| a 0 := e
+| a (nat.succ n) := a * (pow_right a n)
+
+noncomputable def pow_right' : β → ℕ → β
+| a 0 := e
+| a 1 := a
+| a (nat.succ n) := a * (pow_right' a n)
+noncomputable instance : has_pow β _ := ⟨pow⟩
+
+-- Prove to pow ~ pow_right
+
 variables {a b c d : β}
 variables {i j k : ℕ}
 
@@ -120,12 +136,97 @@ lemma inv_two : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by {
   calc (a * b)⁻¹ = (a * b)⁻¹ * e                    : (@id.right (a * b)⁻¹).symm
              ... = (a * b)⁻¹ * (a * b * b⁻¹ * a⁻¹)  : by rw h
              ... = (a * b)⁻¹ * (a * b) * b⁻¹ * a⁻¹  : by
-               conv { to_rhs, rw [@assoc _ _ b⁻¹, @assoc _ _ a⁻¹] }
+                                                  conv { to_rhs, 
+                                                  rw [@assoc _ _ b⁻¹, @assoc _ _ a⁻¹] }
              ... = e * b⁻¹ * a⁻¹  : by rw inv_left
              ... = b⁻¹ * a⁻¹  : by { rw assoc, exact id.left },
   -- use this patern for building calc step by step:
   --         ... = _ : _
 }
+
+
+-- Power operation
+example : a ^ 2 = a * a := by {
+  dsimp [(^)],
+  unfold pow,
+  rw id.left,
+}
+
+example : (a⁻¹) ^ 2 = (a ^ 2)⁻¹ := by {
+  dsimp [(^)],
+  unfold pow,
+  rw [id.left, id.left],
+  exact inv_two.symm,
+}
+
+example (n : ℕ) : pow a n = pow_right a n := by {
+  induction n with n ih,
+  { refl },
+  rw [pow, pow_right, ←ih],
+  have H : ∀ m, pow a m * a = a * pow a m,
+  {
+    assume n,
+    induction n with n ih,
+    { rw [pow, id.left, id.right] },
+    rw [pow, ←assoc, ih],
+  },
+  exact H n,
+}
+
+example (n : ℕ) : pow a n = pow_right' a n := by {
+  induction n with n ih,
+    refl,
+  rw pow,
+  by_cases 1 < n,
+  all_goals {sorry},
+}
+
+example : (a * a)⁻¹ = a⁻¹ * a⁻¹ := @inv_two a a
+-- Alternative for calc tactic:
+example : (a * b * c)⁻¹ = c⁻¹ * (a * b)⁻¹ := inv_two
+example : c⁻¹ * (a * b)⁻¹ = c⁻¹ * b⁻¹ * a⁻¹ := by rw [inv_two, assoc]
+example : (a * b * c)⁻¹ = c⁻¹ * b⁻¹ * a⁻¹ := eq.trans inv_two (by rw [inv_two, assoc])
+
+example : (a * b * c)⁻¹ = c⁻¹ * b⁻¹ * a⁻¹ := calc
+          (a * b * c)⁻¹ = c⁻¹ * (a * b)⁻¹ : by exact inv_two
+                    ... = c⁻¹ * b⁻¹ * a⁻¹ : by rw [inv_two, assoc]
+
+example : (a * b * c)⁻¹ = c⁻¹ * b⁻¹ * a⁻¹ := by {
+  apply eq.trans inv_two,
+  rw assoc,
+  -- needs to be automated! It is not too easy to see what's going on.
+  -- Create equivalence classes of associativity => we can clean out "rw assoc" from proof
+  apply mul_left,
+  rw inv_two,
+  -- have h5 : (a * b)⁻¹ = b⁻¹ * a⁻¹ := sorry,
+  -- have h6 := mul_left h5 c⁻¹,
+  -- have h := @inv_two a b,
+  -- -- try to using eq.subst function (also known as '▸' substitution) instead of rewrite tactic.
+  -- have h2 : (a * b)⁻¹ = a, sorry,
+  -- type_check h,
+  -- have h3 : a = b⁻¹ * a⁻¹ := h ▸ h2.symm,
+  -- -- try to use pattern: have h3 : a = b⁻¹ * a⁻¹ := h ▸ _,
+  -- rewrite h,
+  -- exact assoc.symm,
+}
+
+example (h : b = a) : a = b := h ▸ (eq.refl b)
+example (h₁ : b = a) (h₂ : b * b = c) : a * a = c := by { rw ←h₁, exact h₂ }
+example (h₁ : b = a) (h₂ : b * b = c) : a * a = c := h₁ ▸ h₂ -- b = a ▸ b * b = c -> a * a = c
+example (h₁ : b = a) (h₂ : b * b = c) : a * a = c := by {
+  -- have h₃ := h₁ ▸ h₂, -- did not work because the expected type must be known
+  have h₃ : a * a = c := h₁ ▸ h₂, -- type a * a = c and now it's known
+  exact h₃,
+}
+
+lemma two_mul_example (m n : ℕ) :
+  2 * m + n = m + n + m :=
+calc  2 * m + n
+    = (m + m) + n :
+    by rewrite two_mul
+... = m + n + m :
+    by cc
+
 
 -- Braid axioms:
 axiom dist_comm : i.succ < j → B i * B j = B j * B i
@@ -139,7 +240,7 @@ lemma triv : (B i) * (B i)⁻¹ = e := inv
 lemma inv_left₂ : a⁻¹ * a = e := by {
     -- rw ←@inv a, -- ⊢ a⁻¹ * a = a * a⁻¹
     -- rw (@inv a).symm,
-    -- type_check (@id _).1.symm,
+    -- type_check (@id x),
     have m_left := λ x, (@id x).1.symm,
     have m_right := λ x, (@id x).2.symm,
     -- conv {
@@ -169,6 +270,7 @@ lemma inv_left₃ : a⁻¹ * a = e := by {
     have h3 := (mul_left h a⁻¹),
     rw ←assoc at h3,
     rw ←@assoc a⁻¹ a e at h3,
+    sorry,
   }
 
 lemma inv_left₄ : a⁻¹ * a = e := by {
@@ -179,28 +281,42 @@ lemma inv_left₄ : a⁻¹ * a = e := by {
     rw ←@assoc a⁻¹,
     rw @assoc (a⁻¹ * a),
   }
+lemma inv_left₅ : a⁻¹ * a = e := by {
+  have h1 := eq.refl a⁻¹,
+  have h2 : a⁻¹ * e = a⁻¹, from sorry, clear h1,
+  have h3 : a⁻¹ * (a * a⁻¹) = a⁻¹, rw inv, exact h2,
+  -- ⊢ a⁻¹ * a = e
+  -- ⊢ a⁻¹ * a * a⁻¹ = e * a⁻¹
+  -- ⊢ a⁻¹ * a * a⁻¹ = a⁻¹ by id.left
+  -- ⊢ a⁻¹ * e = a⁻¹ by inv: a * a⁻¹ = e
+  -- ⊢ a⁻¹ = a⁻¹ by id.right
+  sorry,
+}
 
-  lemma inv_left₅ : a⁻¹ * a = e := by {
-    have h1 := eq.refl a⁻¹,
-    have h2 : a⁻¹ * e = a⁻¹, from sorry, clear h1,
-    have h3 : a⁻¹ * (a * a⁻¹) = a⁻¹, rw inv, exact h2,
-    -- ⊢ a⁻¹ * a = e
-    -- ⊢ a⁻¹ * a * a⁻¹ = e * a⁻¹
-    -- ⊢ a⁻¹ * a * a⁻¹ = a⁻¹ by id.left
-    -- ⊢ a⁻¹ * e = a⁻¹ by inv: a * a⁻¹ = e
-    -- ⊢ a⁻¹ = a⁻¹ by id.right
-  }
+lemma inv_comm (h_comm : a * b = b * a) : a⁻¹ * b⁻¹ = b⁻¹ * a⁻¹ := by {
+  have h₁ := mul_left h_comm a⁻¹,
+  rw ←assoc at h₁,
+  rw inv_left at h₁,
+  rw id.left at h₁,
+  have h₂ := mul_left h₁ b⁻¹,
+  rw inv_left at h₂,
+  rw ←assoc at h₂,
+  rw ←assoc at h₂,
+  have h₃ := mul_right (mul_right h₂ a⁻¹) b⁻¹,
+  rw id.left at h₃,
+  rw assoc at h₃,
+  rw assoc at h₃,
+  sorry, -- make branching between rewrite rules atomatic (we can compute graph of decisions)
+}
+-- h_comm : B i * B j = B j * B i
+-- ⊢ (B i)⁻¹ * (B j)⁻¹ = (B j)⁻¹ * (B i)⁻¹
 
-
-lemma dist_comm_inv :
-  i.succ < j → (B i)⁻¹ * (B j)⁻¹ = (B j)⁻¹ * (B i)⁻¹ :=
-  begin
-    assume h_lt,
-    have h_comm := @dist_comm i j h_lt,
-    have h2 := mul_left h_comm (B i)⁻¹,
-    rw ←assoc at h2,
-    rw inv at h2,
-  end
+lemma dist_comm_inv : 
+i.succ < j → (B i)⁻¹ * (B j)⁻¹ = (B j)⁻¹ * (B i)⁻¹ := by {
+  assume h_lt,
+  have h_comm := @dist_comm i j h_lt,
+  apply inv_comm h_comm,
+}
 
 example : b0 * b2 = b2 * b0 := 
   begin
@@ -281,20 +397,14 @@ example : b0 * b1 * b2 * b1 * b2⁻¹ * b1⁻¹ * b0⁻¹ = b2 := by {
     any_goals { simp [lt.base, triv, id.right, assoc], },
   }
 
-
+namespace helping_stuff
 #check lt.trans (lt.base 0) (lt.base 1) = lt.step (lt.base 0) -- 0 < 1, 1 < 2 = 0 < 2 [by lt.trans]
 example : 0 < 1 ∧ 1 < 2 → 0 < 2 := λ h, lt.trans h.left h.right
 example : 0 < 1 → 0 < 2 := @lt.step 0 1
 example : 0 < 2 := lt.trans (lt.base 0) (lt.base 1)
 example : 0 < 2 := @lt.step 0 1 (lt.base 0)
-
 example (a : Prop) : (a → true) ↔ true := iff.intro (λ _, trivial) (λ _ _, trivial)
+end helping_stuff
 
 end braid
-
-
-
-
 end hidden
-
-

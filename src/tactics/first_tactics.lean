@@ -1,3 +1,5 @@
+import data.matrix.notation
+import tactic.suggest
 set_option trace.simplify.rewrite true
 
 namespace and_intro_example
@@ -64,6 +66,7 @@ begin
   repeat { apply and.intro },
   repeat { apply even.add_two },
   -- 4 goals ⊢ ↥(even 0) ⊢ ↥(even 1) ⊢ ↥(even 1) ⊢ ↥(even 0)
+  any_goals { apply even.zero },
   all_goals { sorry, },
 end
 
@@ -188,19 +191,26 @@ meta def destruct_and_helper : expr → tactic unit
 | h :=
   do
     t ← tactic.infer_type h,
+    tactic.trace t,
     match t with
     | `(%%a ∧ %%b) :=
       tactic.exact h
       <|>
       do {
+        tactic.trace "go_left",
         ha ← tactic.to_expr ``(and.elim_left %%h),
         destruct_and_helper ha
       } <|>
       do {
+        tactic.trace "go_right",
         hb ← tactic.to_expr ``(and.elim_right %%h),
         destruct_and_helper hb
       }
-    | _     := tactic.exact h
+    | _     := do {
+      tactic.exact h,
+      tactic.trace "Solved with: ", -- trace must be after applying tactic.exact
+      tactic.trace t
+    }
     end
 
 meta def destruct_and (_name : name) : tactic unit :=
@@ -208,14 +218,293 @@ do
   h ← tactic.get_local _name,
   destruct_and_helper h
 
-lemma abc_a (a b c : Prop) (h : a ∧ b ∧ c) : a :=
+example (a b c : Prop) (h : a ∧ (b ∨ c)) : b ∨ c :=
+begin
+  destruct_and `h,
+end
+
+lemma abc_c (a b c : Prop) (h : a ∧ b ∧ c) : c :=
 begin
   trace_goals,
   trace_state,
   destruct_and `h, -- Unfortunately, we need to quote the name of the hypothesis with a backtick...
 end
 
+#print abc_c
+
 namespace my
+
+constant f : ℕ → Prop
+axiom f.zero : f 0 ↔ true
+axiom f.step (n) : (f n ∧ ¬ f n.succ ∧ f n.succ.succ) ∨ (f n ∧ f n.succ ∧ ¬ f n.succ.succ)
+
+-- axiom f.one_eq_two : f 1 ↔ f 2
+
+axiom prop.A (a : Prop) : (a ↔ true) ∨ (a ↔ false)
+
+axiom not.A : ¬ true ↔ false
+axiom not.B : ¬ false ↔ true
+lemma not.C (a : Prop) : ¬ ¬ a ↔ a := by {
+  have h : (a ↔ true) ∨ (a ↔ false) := prop.A a,
+  cases h; rw h,
+  { rw [not.A, not.B] },
+  { rw [not.B, not.A] },
+}
+lemma not.B' : ¬ false ↔ true := by {
+  -- apply @eq.to_iff (¬ false) true,
+  have h : ¬ ¬ true ↔ ¬ false,
+    apply eq.to_iff,
+    apply congr_arg, -- refine congr rfl _,
+    exact not.A.to_eq, -- exact propext not.A, -- ← library_search [not.A],
+  rw ←h,
+  exact not.C true,
+}
+
+axiom or.A (a : Prop) : a ∨ true ↔ true
+axiom or.B (a : Prop) : a ∨ false ↔ a
+axiom or.C (a b : Prop) : a ∨ b ↔ b ∨ a
+
+axiom and.A (a : Prop) : a ∧ true ↔ a
+axiom and.B (a : Prop) : a ∧ false ↔ false
+axiom and.C (a b : Prop) : a ∧ b ↔ b ∧ a
+lemma and.S (a : Prop) : a ∧ a ↔ a := by { cases prop.A a; rw h, {rw and.A}, {rw and.B} } -- rw [and.A, and.B], -- not works
+lemma and.contra (a : Prop) : a ∧ ¬a ↔ false := by {
+  cases prop.A a; rw h,
+  repeat { rw and.A <|> rw and.B <|> rw or.A <|> rw or.B <|>
+     rw imp.S <|> rw imp.T <|> rw imp.F <|> rw not.A <|> rw not.B <|> trivial },
+}
+
+lemma iff.A : (true ↔ false) ↔ false := true_iff false
+lemma iff.C (a b : Prop) : (a ↔ b) ↔ (b ↔ a) := iff.comm
+lemma iff.S (a : Prop) : (a ↔ a) ↔ true := iff_self a
+lemma iff.T (a : Prop) : (a ↔ true) ↔ a := sorry
+lemma iff.F (a : Prop) : (a ↔ false) ↔ ¬ a := sorry
+
+lemma iff.not_self (a : Prop) : (a ↔ ¬ a) ↔ false := by {
+  cases prop.A a; rw h,
+  { rw [ not.A, iff.A ], },
+  { rw [ not.B, iff.C false, iff.A ], },
+}
+
+lemma imp.F (a : Prop) : (false → a) ↔ true := false_implies_iff a
+lemma imp.T (a : Prop) : (true → a) ↔ a := true_implies_iff a
+lemma imp.S (a : Prop) : (a → a) ↔ true := by {
+  cases prop.A a; rw h,
+  { rw imp.T, },
+  { rw imp.F, },
+}
+
+lemma or.D (a b : Prop) : a ∨ b ↔ ¬ (¬ a ∧ ¬ b) := by {
+  cases (prop.A a); rw [h, or.C, and.C], {
+    rw [ or.A, not.A, and.B, not.B ],
+  }, {
+    -- simp only [or.C, or.A, or.B, and.C, and.B, and.A, not.A, not.B, prop.A, not.C],
+    -- without or.C and.C:
+    -- [false_or]: false ∨ b ==> b
+    -- [my.not.B]: ¬false ==> true
+    -- [true_and]: true ∧ ¬b ==> ¬b
+    -- [my.not.C]: ¬¬b ==> b
+    -- [iff_self]: b ↔ b ==> true
+    -- with or.C and.C:
+    -- [my.or.B]: b ∨ false ==> b
+    -- [my.not.B]: ¬false ==> true
+    -- [my.and.A]: ¬b ∧ true ==> ¬b
+    -- [my.not.C]: ¬¬b ==> b
+    rw [ or.B, not.B, and.A, not.C ],
+  },
+}
+
+lemma iff.apply_not (a b : Prop) : (a ↔ b) ↔ (¬ a ↔ ¬ b) := by {
+  cases prop.A a; rw h,
+  {
+    cases prop.A b; rw h_1,
+      { rw [ iff.S, iff.S ] },
+      { rw [ iff.A, not.A, iff.not_self ] },
+  },
+  {
+    cases prop.A b; rw h_1,
+      { rw [ iff.C false, iff.A, not.B, iff.not_self ] },
+      { rw [ iff.S, iff.S ] },
+  },
+}
+
+lemma and.D (a b : Prop) : a ∧ b ↔ ¬ (¬ a ∨ ¬ b) := by {
+  set c := ¬ a with hc,
+  set d := ¬ b with hd,
+  have h₁ : ¬ c ↔ a := by rw [hc, not.C],
+  have h₂ : ¬ d ↔ b := by rw [hd, not.C],
+  rw [←h₁, ←h₂],
+  rw [iff.apply_not, ←or.D, not.C],
+}
+
+-- sudoku weak link and strong link
+constant weak : Prop → Prop → Prop
+constant strong : Prop → Prop → Prop
+
+axiom weak.def (a b : Prop) : weak a b ↔ ¬ (a ∧ b)
+axiom strong.def (a b : Prop) : strong a b ↔ ¬ a ∧ b ∨ a ∧ ¬ b
+lemma weak.C (a b : Prop) : weak a b ↔ weak b a := by rw [ weak.def, weak.def, and.C ]
+lemma strong.C (a b : Prop) : strong a b ↔ strong b a := by rw [ strong.def, strong.def, or.C, and.C, and.C ¬a ]
+
+local attribute [instance] classical.prop_decidable -- for working by_contra h_left
+
+lemma wrong_eliminate_right : ∃ (a b c : Prop), ¬ ((a ∧ c → b ∧ c) → (a → b)) := by {
+  existsi true, -- backtracking order from true to false, using binary bits: 0 = true, 1 = false, example [000, 001, 010, ..., 111]
+  existsi false,
+  existsi false,
+  iterate 7 { rw and.A <|> rw and.B <|> rw or.A <|> rw or.B <|>
+     rw imp.S <|> rw imp.T <|> rw imp.F <|> rw not.A <|> rw not.B <|> trivial },
+  -- solutions of backtracking: [011] = [true, false, false] (one solution)
+}
+
+lemma eliminate_right : ∀ (a b c : Prop), (a ∧ c → b ∧ c) → (a ∧ c → b) := by {
+  introv,
+  cases prop.A c; try {rw h},
+  repeat { rw and.A <|> rw and.B <|> rw or.A <|> rw or.B },
+  { assume h₂ : a → b, exact h₂ }, -- c ↔ true
+  { -- c ↔ false
+    rw [ imp.S, imp.T, imp.F ],
+    exact true.intro,
+  }
+}
+
+lemma eliminate_right_backward : ∀ (a b c : Prop), (a ∧ c → b) → (a ∧ c → b ∧ c) := by {
+  introv,
+  cases prop.A c; try {rw h},
+  repeat { rw and.A <|> rw and.B <|> rw or.A <|> rw or.B },
+  { assume h₂ : a → b, exact h₂ }, -- c ↔ true
+  { -- c ↔ false
+    repeat { rw imp.F <|> rw imp.T <|> rw imp.S <|> trivial },
+  }
+}
+
+-- weak-strong-weak-strong loop ↔ strong-strong-strong-strong
+lemma sudoku_simplest_loop (a b c d : Prop) :
+    weak a b ∧ strong b c ∧   weak c d ∧ strong d a → 
+  strong a b ∧ strong b c ∧ strong c d ∧ strong d a := 
+begin
+  cases prop.A a; try {rw h, clear h},
+  {
+    -- if a = 1 then b = 0 by weak a b
+    have h₁ : weak true b ↔ (b ↔ false) := by rw [ weak.def, and.C, and.A, iff.F ],
+    rw h₁,
+    assume h_left,
+    rw h_left.1 at *,
+    have h₃ : strong d true ↔ (d ↔ false) := by rw [ strong.def, and.A, not.A, and.B, or.B, iff.F ],
+    rw h₃ at h_left,
+    have b_false := h_left.1,
+    have d_false := h_left.2.2.2,
+    rw [b_false, d_false, iff.S, and.A, and.C, and.A] at h_left,
+    have h₄ : weak c false := by { rw [weak.def, and.B, not.B], trivial },
+    rw [(iff.T _).2 h₄, and.A] at h_left,
+    have c_true : c ↔ true,
+      by_contra h_contra,
+      rw [iff.T, ←iff.F] at h_contra,
+      rw h_contra at h_left,
+      rw strong.def at h_left,
+      rw [and.B, and.C, and.B, or.B] at h_left,
+      exact h_left,
+      -- rw strong.def at h_left,
+      -- rw not.B at h_left,
+      -- rw [and.C, and.C false] at h_left,
+      -- rw [and.A, and.B] at h_left,
+    rw c_true,
+    rw [strong.C, strong.C true],
+    rw ←and.assoc,
+    repeat { rw and.S },
+    rw [d_false, and.S],
+    rw c_true at h_left,
+    exact h_left,
+    -- rw [strong.def, not.A, and.B, not.B, and.A, or.A, and.C, and.A],
+    -- repeat { apply and.intro },
+    -- rw [strong.def, not.A, not.B, and.A, and.B, or.A], trivial,
+    -- have h₂ : strong b c := h_left.2.1,
+    -- rw ←b_false,
+    -- exact h₂,
+    
+
+  },
+  {
+    iterate 2 { rw [weak.def] },
+    iterate 4 { rw [strong.def] },
+    repeat {
+      rw not.A <|> rw not.B <|> rw and.A <|> rw and.B <|> rw and.C false
+      <|> rw and.C true <|> rw or.C false <|> rw or.A <|> rw or.B,
+    },
+    rw ←and.assoc,
+    rw ←and.assoc,
+    rw ←and.assoc,
+    apply eliminate_right_backward _ _ d,
+    cases prop.A d ; rw h,
+    repeat {
+      rw not.A <|> rw not.B <|> rw and.A <|> rw and.B <|> rw or.B <|> rw or.C false <|> rw imp.F <|> trivial,
+    },
+    rename h d_true,
+    cases prop.A b; rw h,
+    repeat {
+      rw not.A <|> rw not.B <|> rw and.A <|> rw and.B <|> rw or.B <|> rw or.C false 
+      <|> rw and.C false <|> rw and.C true <|> rw and.S <|> rw imp.F <|> rw imp.S <|> trivial,
+    },
+    type_check (and.contra c).1, -- c ∧ ¬c → false
+    have h₂ : c ∧ ¬c → false := (and.contra c).1,
+    apply h₂,
+  }
+end
+
+
+example : f 0 := by { rw [f.zero], exact true.intro, }
+example : f 1 := by {
+  -- simp [f.step, f.zero, f.one_eq_two] {fail_if_unchanged := ff},
+  have h₀ := f.step 0,
+  rw f.zero at h₀,
+  have h_and : ∀ a, true ∧ a ↔ a, {
+    assume a,
+    rw and.C,
+    exact and.A a,
+  },
+  rw h_and at h₀,
+  rw h_and at h₀,
+  cases (prop.A (f 1)); rw h, {
+    exact true.intro,
+  },
+  {
+    rw h at h₀,
+    rw not.B at h₀,
+    rw h_and at h₀,
+    rw and.C at h₀,
+    rw and.B at h₀,
+    rw or.B at h₀, -- f 2 must be false for successing proof => (f 2 = false => f 1 = true)
+    sorry, -- not provable?
+  },
+}
+
+example : ¬ f 1 := by {
+  have h₀ := f.step 0,
+  rw f.zero at h₀,
+  have h_and : ∀ a, true ∧ a ↔ a, {
+    assume a,
+    rw and.C,
+    exact and.A a,
+  },
+  rw h_and at h₀,
+  rw h_and at h₀,
+  cases (prop.A (f 1)); rw h, {
+    rw not.A,
+    rw h at h₀,
+    rw not.A at h₀,
+    rw h_and at h₀,
+    rw and.C at h₀,
+    rw and.B at h₀,
+    rw or.C at h₀,
+    rw or.B at h₀,
+    sorry,
+  },
+  {
+    rw not.B,
+    exact true.intro,
+  },
+}
+
 end my
 -- intro tactic:
 

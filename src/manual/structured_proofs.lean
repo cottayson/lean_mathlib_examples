@@ -48,6 +48,15 @@ assume : (q ∧ r),
 have q, from and.left this,
 show p ∧ q, from and.intro ‹p› this -- ‹ = \f, › = \frq
 
+-- ‹p› means (by assumption : p)
+-- ‹_› means (by assumption : _) means (by assumption)
+
+example (p q r : Prop) : p → (q ∧ r) → p ∧ q :=
+assume : p,
+assume : (q ∧ r),
+have q, from and.left this,
+show p ∧ q, from and.intro (by assumption : p) this
+
 /-
 example (p q r : Prop) : p → (q ∧ r) → p ∧ q :=
 assume (h₁ : p) (h₂ : q ∧ r),
@@ -104,12 +113,18 @@ calc
 Step 2:
 -/
 
+-- Equivalent ways of writing proof:
+-- 1. add_comm d _
+-- 2. by exact add_comm d _
+-- 3. by { exact add_comm d _, }
+-- 4. begin exact add_comm d _, end
+
 theorem T : a = e :=
 calc
   a   = b     : h1 -- ⊢ a = b
-  ... = c + 1 : begin exact h2 b c, end -- ⊢ b = c + 1
+  ... = c + 1 : h2 b c -- ⊢ b = c + 1
   ... = d + 1 : congr_arg nat.succ h3 -- ⊢ c + 1 = d + 1
-  ... = 1 + d : by exact add_comm d _ -- ⊢ d + 1 = 1 + d, _ <=> (1 : ℕ)
+  ... = 1 + d : add_comm d _ -- ⊢ d + 1 = 1 + d, _ <=> (1 : ℕ)
   ... = e     : h4.symm -- ⊢ 1 + d = e
 
 -- congr_arg : ∀ {α β : Type} {a₁ a₂ : α}

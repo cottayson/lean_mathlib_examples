@@ -74,11 +74,11 @@ lemma reverse_right (x : α) (xs : list α) :
 begin
   induction xs with head tail ih,
   case nil {
-    simp,
-    -- rw append.base,
-    -- rw reverse.step,
-    -- rw reverse.base,
-    -- rw append.base,
+    -- simp,
+    rw append.base,
+    rw reverse.step,
+    rw reverse.base,
+    rw append.base,
   },
   case cons {
     -- simp [ih],

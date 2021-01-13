@@ -1,3 +1,5 @@
+import tactic.suggest
+
 constant α : Type
 constant reverse_core : list α → list α → list α
 constant reverse : list α → list α
@@ -17,8 +19,24 @@ lemma reverse.single (x : α) : reverse [x] = [x] :=
 begin
   rw reverse.def,
   rw reverse_core.step,
-  rw reverse_core.base,
+  exact reverse_core.base _,
+  -- suggest [reverse_core.base, reverse_core.step, concat.step, concat.base, reverse.def],
+
+  -- type_check ((reverse.def [x]).symm.congr (reverse_core.base [x])).mp,
+  -- type_check (reverse_core.base [x]),
+  -- type_check (reverse_core.step x list.nil list.nil),
+
+  -- exact ((reverse.def [x]).symm.congr 
+  --       (reverse_core.base [x])).mp 
+  --       (reverse_core.step x list.nil list.nil),
+
+  -- exact ((λ {α : Type} {x₁ x₂ y₁ y₂ : α} (h₁ : x₁ = y₁) (h₂ : x₂ = y₂), (h₁.congr h₂).mp)
+  --  (reverse_core.base [x])
+  --  (reverse.def [x]).symm
+  --  (reverse_core.step x list.nil list.nil).symm).symm,
 end
+
+#print reverse.single
 
 example (a b c : α) : reverse [a, b, c] = [c, b, a] :=
 begin

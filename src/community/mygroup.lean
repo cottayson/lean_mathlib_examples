@@ -1,3 +1,6 @@
+import tactic.suggest
+import tactic.solve_by_elim
+import tactic.show_term
 -- https://github.com/Sterrs/leaning/blob/lean-3.4.2/src/principia/mygroup/basic.lean
 namespace hidden
 
@@ -124,7 +127,8 @@ lemma inv_four'' : a⁻¹⁻¹⁻¹⁻¹ = a :=
   by calc a⁻¹⁻¹⁻¹⁻¹ = a⁻¹⁻¹ : inv_inv _
                 ... = a     : inv_inv _
 
-#print inv_four
+-- equals each other
+#print inv_four 
 #print inv_four'
 #print inv_four''
 
@@ -150,7 +154,7 @@ begin
   repeat {
     apply eq.trans,
     apply mygroup.inv_inv,
-  },
+  }
   refl,
 end
 
@@ -159,8 +163,8 @@ begin
   repeat {
     apply eq.trans,
     apply mygroup.inv_inv,
+    try { refl },
   },
-  refl,
 end
 
 example (a : α) : a⁻¹ = a⁻¹⁻¹⁻¹ :=
@@ -169,7 +173,7 @@ begin
   repeat {
     apply eq.trans,
     apply mygroup.inv_inv,
-    try { refl, },
+    try { refl },
   },
 end
 

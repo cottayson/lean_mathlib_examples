@@ -17,10 +17,9 @@ attribute [intro] in_tail in_head in_left in_right
 meta def mk_mem_list : tactic unit :=
 solve1 (back_chaining)
 
+set_option trace.tactic.back_chaining true
 example (a b c : nat) : a ∈ [b, c] ++ [b, a, b] :=
 by mk_mem_list
-
-set_option trace.tactic.back_chaining true
 
 example (a b c : nat) : a ∈ [b, c] ++ [b, a, b] :=
 by mk_mem_list
