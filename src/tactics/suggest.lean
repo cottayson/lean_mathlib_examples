@@ -143,6 +143,16 @@ begin
   exact lt.succ_not_less 4,
 end
 
+example (a : Prop): false → a :=
+begin
+  suggest 22,
+  exact false.elim,
+  -- exact false.rec a
+  -- exact false.drec (λ (n : false), a)
+  -- exact false.elim
+  -- exact false.rec_on a
+end
+
 
 
 example : ¬ lt 0 0 :=

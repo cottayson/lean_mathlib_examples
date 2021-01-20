@@ -22,7 +22,7 @@ lemma hz : z := z.intro
 #check @eq_true_intro
 
 example : 1 ≤ 1 := by {
-  norm_num,
+  show_term { norm_num, },
   trace_result,
 }
 
@@ -92,7 +92,7 @@ open norm_num
 open tactic
 meta def apply_step : tactic unit :=
   do 
-    exact add_bit0_bit0,
+    -- interactive.exact add_bit0_bit0
     trace "hello"
 
 example : (15 : ℝ) + 5 = 20 := by {

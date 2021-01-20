@@ -42,6 +42,7 @@ end
 -- Exercise 7
 -- Prove the theorem below, using only the 
 -- ring properties of ℤ enumerated in Section 4.2 and the theorem sub_self.
+
 #check sub_self
 
 example (x : ℤ) : x * 0 = 0 :=
@@ -49,6 +50,18 @@ calc
     x * 0 = x * (x - x) : by rw sub_self
     ... = x * x - x * x : by rw mul_sub
     ... = 0 : by rw sub_self
+
+-- Important remark:
+-- Why this task was not automated?
+-- Example:
+-- `search solution in graph of states` using set_of_lemmas
+--   [sub_self as rewrite_rule, mul_sub as rewrite_rule, -default_addition_set, ...]
+-- `-`lemma_name means not using this lemma
+-- More general:
+-- Metarules₁ = [action ∈ {sub_self, mul_sub} ∪ default_boolean]
+-- search_in_lib using Metarules₁
+--
+-- * Also we can write proof about Metarules like for ordinary theorems
 
 set_option trace.simplify.rewrite true
 

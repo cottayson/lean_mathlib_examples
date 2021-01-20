@@ -79,7 +79,7 @@ begin
   have clef : |l-l'| < |l-l'|,
     calc
     |l - l'| = |(l - u N₀) + (u N₀ - l')| : by ring
-         ... ≤ |l - u N₀| + |u N₀ - l'|   : by apply abs_add -- apply in forward order, not backward?
+         ... ≤ |l - u N₀| + |u N₀ - l'|   : by apply abs_add -- apply in forward order, not backward? answer: no, calc implicitly executed `apply eq.trans`
          ... = |u N₀ - l| + |u N₀ - l'|   : by rw abs_sub
          ... < |l-l'| : by linarith,
   linarith, -- liarith can also find simple numerical contradictions

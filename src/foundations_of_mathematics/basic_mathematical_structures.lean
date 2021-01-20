@@ -6,9 +6,9 @@ set_option trace.simplify true
 (mul : α → α → α)
 (one : α)
 (inv : α → α)
-(mul_assoc : ∀a b c, mul (mul a b) c = mul a (mul b c))
-(one_mul : ∀a, mul one a = a)
-(mul_left_inv : ∀a, mul (inv a) a = one)
+(mul_assoc : ∀ a b c, mul (mul a b) c = mul a (mul b c))
+(one_mul : ∀ a, mul one a = a)
+(mul_left_inv : ∀ a, mul (inv a) a = one)
 
 -- potential instance of group class
 inductive ℤ₂ : Type
@@ -34,10 +34,10 @@ notation `z1` := ℤ₂.one
 @[instance] def ℤ₂.add_group : add_group ℤ₂ :=
 {
   add := ℤ₂.add,
-  add_assoc := begin sorry, end,
+  add_assoc := by intros a b c; cases a; cases b; cases c; simp only [(+), ℤ₂.add],
   zero := ℤ₂.zero,
-  zero_add := begin sorry, end,
-  add_zero := begin sorry, end,
+  zero_add := by intro a; cases a; simp only [(+), ℤ₂.add],
+  add_zero := by intro a; cases a; simp only [(+), ℤ₂.add],
   neg      := (λ x, x),
   add_left_neg := begin
     intro a,

@@ -47,11 +47,14 @@ sorted.two_or_more dec_trivial
   )
 
 lemma sorted_7_9_9_11₂:
-  sorted [7, 9, 9, 11] :=
+  sorted [7, 9, 9, 11,15,666,1000] :=
 begin
   -- backward_chaining, -- unknown identifier 'backward_chaining'
-  repeat { constructor, exact dec_trivial, },
-  exact sorted.single,
+  repeat {
+    constructor,
+    exact dec_trivial, 
+    try { exact sorted.single }
+  },
     -- simp [sorted.two_or_more, sorted.single],
   /-
   simp see only that rules:
@@ -61,6 +64,33 @@ begin
     list.subset_append_left
     list.subset_append_right
   -/
+end
+
+example (x): 15 ≤ x → sorted [7, 9, 9, 11, 15, x] :=
+begin
+  assume h : 15 ≤ x,
+   repeat {
+    constructor,
+    exact dec_trivial, 
+    try { exact sorted.single }
+  },
+  -- exact sorted.two_or_more (h : 15 ≤ x) (sorted.single : sorted [x]),
+  apply sorted.two_or_more; exact sorted.single <|> assumption,
+  tactic.trace_result,
+end
+
+example (x): x ≤ 15 ∧ 11 ≤ x → sorted [7, 9, 9, 11, x, 15] :=
+begin
+  assume h : x ≤ 15 ∧ 11 ≤ x,
+  have h₁ := h.1, have h₂ := h.2, -- for good working assumption
+   repeat {
+    constructor,
+    exact dec_trivial, 
+    try { exact sorted.single }
+  },
+  show_term { apply sorted.two_or_more; exact sorted.single <|> assumption <|> skip, },
+  show_term { apply sorted.two_or_more; exact sorted.single <|> assumption <|> skip, },
+  tactic.trace_result,
 end
 
 namespace helper
